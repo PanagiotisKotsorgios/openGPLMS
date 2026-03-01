@@ -2,4 +2,4 @@
 
 > small description here
 
-<img src = "">
+<img src = "https://github.com/PanagiotisKotsorgios/openGPLMS/blob/main/assets/opengplms_logo.png">
