@@ -2,7 +2,7 @@
 
 > A self-hosted, web-based library management system built with PHP and MySQL. Manage your collection, control access by role, and expose a public catalog — all from a single lightweight install.
 
-<img src="https://github.com/PanagiotisKotsorgios/openGPLMS/blob/main/assets/opengplms-logo.png">
+<img src="https://github.com/PanagiotisKotsorgios/openGPLMS/blob/main/assets/opengplms_logo.png">
 
 ---
 
