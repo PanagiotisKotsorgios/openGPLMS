@@ -1,0 +1,70 @@
+@startuml 06_permission_request
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName monospaced
+skinparam defaultFontSize 11
+skinparam sequenceArrowColor black
+skinparam sequenceLifeLineBorderColor black
+skinparam sequenceParticipantBorderColor black
+skinparam sequenceParticipantBackgroundColor white
+skinparam noteBorderColor black
+skinparam noteBackgroundColor white
+
+title Book Edit/Delete Permission Flow — openGPLMS
+
+actor Employee
+participant "catalog.php\n/ book.php" as page
+database "books" as books
+database "users" as users
+database "messages" as messages
+database "audit_log" as audit
+actor Admin
+
+== Employee views a book they do not own ==
+
+Employee -> page : GET book.php?id=42
+page -> books : SELECT WHERE id=42
+books --> page : book row (created_by = other user)
+page -> page : canManage = false\n(not admin, not owner)
+page --> Employee : Show "Επεξεργασία (Αίτημα)"\nand "Διαγραφή (Αίτημα)" buttons
+
+== Employee submits permission request ==
+
+Employee -> page : Click request button\nEnter reason in modal
+Employee -> page : POST action=request_permission\nbook_id=42, req_action=edit, reason="..."
+
+page -> page : verifyCsrf()
+
+page -> users : SELECT active admins
+users --> page : admin user list
+
+loop for each active admin
+  page -> messages : INSERT\nfrom_user=employee\nto_user=admin\nsubject="Αίτημα Άδειας: ..."\nbody=book details + reason
+end
+
+page -> audit : INSERT request_permission\ntarget_id=42\ndetails="Requested edit permission"
+
+page --> Employee : flash "Το αίτημα στάλθηκε"\nRedirect back
+
+== Admin handles the request ==
+
+Admin -> messages : Open inbox\nRead permission request message
+note right
+  Message contains:
+  - Employee name
+  - Requested action
+  - Book ID, title, ISBN
+  - Reason
+end note
+
+alt Admin approves
+  Admin -> page : Navigate to book.php?id=42\nor catalog.php
+  Admin -> books : Edit or delete the book directly\n(admin has full access)
+  books --> page : Updated
+  page -> audit : INSERT edit or delete action
+  Admin -> messages : Optionally reply to employee
+else Admin declines
+  Admin -> messages : Reply to employee\nexplaining refusal
+end
+
+@enduml

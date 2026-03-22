@@ -1,0 +1,59 @@
+@startuml 02_login_flow
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName monospaced
+skinparam defaultFontSize 11
+skinparam sequenceArrowColor black
+skinparam sequenceLifeLineBorderColor black
+skinparam sequenceParticipantBorderColor black
+skinparam sequenceParticipantBackgroundColor white
+skinparam sequenceBoxBorderColor black
+skinparam sequenceBoxBackgroundColor white
+skinparam noteBorderColor black
+skinparam noteBackgroundColor white
+
+title Login & Authentication Flow — openGPLMS
+
+actor Browser
+participant "index.php\n/ catalog_public.php" as page
+participant "config.php\n(session)" as config
+database "users table" as db
+participant "audit_log" as audit
+
+Browser -> page : GET (load page)
+page -> config : session_start()\ncsrfToken()
+page --> Browser : HTML form + CSRF token
+
+Browser -> page : POST action=login\nusername, password, csrf_token
+
+page -> config : verifyCsrf()
+alt CSRF mismatch
+  config --> Browser : HTTP 403
+end
+
+page -> config : loginCheckRateLimit(ip)
+alt IP locked out
+  config --> Browser : Error: try again in N min
+end
+
+page -> db : SELECT WHERE username=?\nAND active=1
+db --> page : user row or null
+
+alt user found
+  page -> page : password_verify()
+  alt password matches
+    page -> config : session_regenerate_id(true)
+    page -> config : loginClearAttempts(ip)
+    note right : Sets $_SESSION:\nuser_id, username, role
+    page -> audit : INSERT login action
+    page --> Browser : Location: dashboard.php
+  else wrong password
+    page -> config : loginRecordFailure(ip)
+    page --> Browser : Error + attempts remaining
+  end
+else user not found
+  page -> config : loginRecordFailure(ip)
+  page --> Browser : Generic error message
+end
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml 03_role_permissions
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName monospaced
+skinparam defaultFontSize 11
+skinparam actorBorderColor black
+skinparam actorBackgroundColor white
+skinparam usecaseBorderColor black
+skinparam usecaseBackgroundColor white
+skinparam arrowColor black
+skinparam packageBorderColor black
+skinparam packageBackgroundColor white
+
+title Role & Permission Model — openGPLMS
+
+left to right direction
+
+actor "Visitor\n(no login)" as visitor
+actor "User\n(logged in)" as user
+actor "Employee" as emp
+actor "Admin" as admin
+
+user --|> visitor
+emp --|> user
+admin --|> emp
+
+rectangle "Public Access" {
+  usecase "Browse public catalog" as UC1
+  usecase "Filter & search catalog" as UC2
+  usecase "View item detail modal" as UC3
+}
+
+rectangle "Employee Access" {
+  usecase "Dashboard & statistics" as UC4
+  usecase "Staff catalog (view all)" as UC5
+  usecase "Add new item" as UC6
+  usecase "Edit own item" as UC7
+  usecase "Request edit/delete\n(not owner)" as UC8
+  usecase "CSV import & editor" as UC9
+  usecase "Reports & audit log view" as UC10
+  usecase "Internal messaging" as UC11
+  usecase "Change own password" as UC12
+}
+
+rectangle "Admin Only" {
+  usecase "Edit / delete any item" as UC13
+  usecase "Mass delete / status / visibility" as UC14
+  usecase "Manage users" as UC15
+  usecase "Manage categories & publishers" as UC16
+  usecase "Full audit log + export" as UC17
+  usecase "Clear audit log" as UC18
+}
+
+visitor --> UC1
+visitor --> UC2
+visitor --> UC3
+
+emp --> UC4
+emp --> UC5
+emp --> UC6
+emp --> UC7
+emp --> UC8
+emp --> UC9
+emp --> UC10
+emp --> UC11
+emp --> UC12
+
+admin --> UC13
+admin --> UC14
+admin --> UC15
+admin --> UC16
+admin --> UC17
+admin --> UC18
+
+@enduml

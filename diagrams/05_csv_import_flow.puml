@@ -1,0 +1,61 @@
+@startuml 05_csv_import_flow
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName monospaced
+skinparam defaultFontSize 11
+skinparam sequenceArrowColor black
+skinparam sequenceLifeLineBorderColor black
+skinparam sequenceParticipantBorderColor black
+skinparam sequenceParticipantBackgroundColor white
+skinparam noteBorderColor black
+skinparam noteBackgroundColor white
+
+title CSV Import Workflow — openGPLMS
+
+actor Employee
+participant "csv_editor.php\n(browser)" as editor
+participant "csv_import.php" as importer
+database "categories\npublishers" as lookup
+database "books" as books
+participant "audit_log" as audit
+
+== Option A: Upload existing file ==
+
+Employee -> importer : POST csv_file + options
+importer -> importer : Strip UTF-8 BOM\nAuto-detect delimiter
+
+== Option B: Use online editor ==
+
+Employee -> editor : Open editor\n(10 blank rows pre-loaded)
+Employee -> editor : Type / paste data\nUse autocomplete dropdowns
+Employee -> editor : Click "Απευθείας Εισαγωγή"
+editor -> editor : Build CSV string in memory\nCreate File object via DataTransfer API
+editor -> importer : POST (form submit with\nin-memory file)
+
+== Processing (both paths) ==
+
+loop for each CSV row
+  importer -> importer : Validate title & author\n(skip row if missing)
+
+  importer -> lookup : findOrCreate(category name)
+  lookup --> importer : category_id\n(create new if missing)
+
+  importer -> lookup : findOrCreate(publisher name)
+  lookup --> importer : publisher_id\n(create new if missing)
+
+  alt ISBN already exists in books
+    alt update_existing = true
+      importer -> books : UPDATE SET ... WHERE id=?
+      note right : Updates all fields\nexcept isbn, created_by
+    else skip duplicate
+      importer -> importer : Mark row as "Παραλείφθηκε"
+    end
+  else new record
+    importer -> books : INSERT INTO books (...)
+  end
+end
+
+importer -> audit : INSERT csv_import\n"Imported: N, Skipped: M"
+importer --> Employee : Results table\n(Εισήχθη / Ενημερώθηκε / Παραλείφθηκε)
+
+@enduml

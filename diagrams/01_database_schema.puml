@@ -1,0 +1,91 @@
+@startuml 01_database_schema
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName monospaced
+skinparam defaultFontSize 11
+skinparam classBackgroundColor white
+skinparam classBorderColor black
+skinparam arrowColor black
+skinparam linetype ortho
+
+title Database Schema — openGPLMS
+
+entity "users" as users {
+  * id : INT (PK)
+  --
+  * username : VARCHAR(100)
+  * password : VARCHAR(255)
+  * role : ENUM(admin,employee,user)
+  * active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "books" as books {
+  * id : INT (PK)
+  --
+  * title : VARCHAR(300)
+  * author : VARCHAR(200)
+  isbn : VARCHAR(30)
+  * type : ENUM(...)
+  category_id : INT (FK)
+  publisher_id : INT (FK)
+  year : INT
+  language : VARCHAR(50)
+  pages : INT
+  edition : VARCHAR(50)
+  volume : VARCHAR(50)
+  location : VARCHAR(100)
+  description : TEXT
+  cover_url : VARCHAR(500)
+  * status : ENUM(...)
+  is_public : TINYINT(1)
+  created_by : INT
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "categories" as categories {
+  * id : INT (PK)
+  --
+  * name : VARCHAR(100)
+  description : TEXT
+  created_at : DATETIME
+}
+
+entity "publishers" as publishers {
+  * id : INT (PK)
+  --
+  * name : VARCHAR(200)
+  created_at : DATETIME
+}
+
+entity "messages" as messages {
+  * id : INT (PK)
+  --
+  from_user : INT (FK)
+  to_user : INT (FK)
+  subject : VARCHAR(200)
+  body : TEXT
+  is_read : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "audit_log" as audit {
+  * id : INT (PK)
+  --
+  user_id : INT
+  action : VARCHAR(100)
+  target_type : VARCHAR(50)
+  target_id : INT
+  details : TEXT
+  created_at : DATETIME
+}
+
+categories ||--o{ books : "category_id\n(SET NULL)"
+publishers ||--o{ books : "publisher_id\n(SET NULL)"
+users ||--o{ messages : "from_user\n(SET NULL)"
+users ||--o{ messages : "to_user\n(CASCADE)"
+users ||--o{ audit : "user_id\n(no FK)"
+users ||--o{ books : "created_by\n(no FK)"
+
+@enduml

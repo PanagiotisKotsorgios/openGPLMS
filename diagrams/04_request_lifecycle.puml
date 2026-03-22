@@ -1,0 +1,63 @@
+@startuml 04_request_lifecycle
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName monospaced
+skinparam defaultFontSize 11
+skinparam activityBorderColor black
+skinparam activityBackgroundColor white
+skinparam activityArrowColor black
+skinparam activityDiamondBorderColor black
+skinparam activityDiamondBackgroundColor white
+skinparam noteBackgroundColor white
+skinparam noteBorderColor black
+
+title Request Lifecycle — Every Admin Page
+
+start
+
+:Browser sends HTTP request;
+
+:require 'config.php'\n(session_start, helpers loaded);
+
+if (Is POST request?) then (yes)
+  :verifyCsrf()\nAbort with 403 if mismatch;
+  :Handle action\n(INSERT / UPDATE / DELETE);
+  :flash(message);
+  :header(Location: same_page)\nexit;
+  note right
+    Post-Redirect-Get
+    prevents F5 resubmit
+  end note
+  stop
+else (no, GET)
+endif
+
+:requireEmployee()\nor requireAdmin();
+
+if (Role check passes?) then (no)
+  :Redirect to index.php\nor dashboard.php;
+  stop
+else (yes)
+endif
+
+:getDB() — PDO singleton;
+
+:Run SELECT queries\nfor page data;
+
+:$pageTitle = '...'\n$activePage = '...';
+
+:include layout_admin.php\n(HTML head, sidebar, flash);
+
+:Render page HTML content;
+
+if ($extraJs set?) then (yes)
+  :include layout_admin_end.php\n(outputs $extraJs);
+else (no)
+  :include layout_admin_end.php\n(close tags only);
+endif
+
+:Send HTTP 200 response;
+
+stop
+
+@enduml
